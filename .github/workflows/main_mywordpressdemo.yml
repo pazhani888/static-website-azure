@@ -1,48 +1,35 @@
-name: Deploy static site to Azure Web App - mywordpressdemo
+name: Deploy static site to Azure Web App
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Zip website files
-        run: zip -r release.zip .
-
-      - uses: actions/upload-artifact@v4
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: static-site
-          path: release.zip
+          name: webapp
+          path: .
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
-          name: static-site
-
-      - name: Unzip files
-        run: unzip release.zip -d ./deploy
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5DC46C556DB1475E96EB1AAC7DEEE90D }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5B5C516B81CC48B7A019BF6B23EBF496 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4C146FA6894B4C43A953EA374ED18229 }}
+          name: webapp
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'mywordpressdemo'
-          slot-name: 'Production'
-          package: ./deploy
+          app-name: mywordpressdemo
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .
